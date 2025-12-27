@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WgetGUI Ultimate (Fluent)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            /* Windows 11 Light Theme Palette */
+            --bg-app: #f3f3f3;
+            --bg-card: #ffffff;
+            --bg-input: #ffffff;
+            --bg-input-hover: #fcfcfc;
+            --bg-disabled: #f9f9f9;
+            --border-base: #e5e5e5;
+            --border-input: #d1d1d1;
+            --border-input-focus: #0067c0;
+            --text-primary: #1a1a1a;
+            --text-secondary: #5d5d5d;
+            --text-disabled: #a6a6a6;
+            --accent-default: #0067c0;
+            --accent-hover: #005a9e;
+            --accent-text: #ffffff;
+            --danger: #c42b1c;
+            --success: #107c10;
+            --warning-bg: #fff4ce;
+            --warning-text: #9d5d00;
+            
+            /* Dimensions & Effects */
+            --radius-sm: 4px;
+            --radius-md: 6px;
+            --radius-lg: 8px;
+            --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.04);
+            --shadow-flyout: 0 8px 16px rgba(0, 0, 0, 0.14);
+            
+            --font-stack: 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        [data-theme="dark"] {
+            /* Windows 11 Dark Theme Palette */
+            --bg-app: #202020;
+            --bg-card: #2c2c2c;
+            --bg-input: #333333;
+            --bg-input-hover: #3a3a3a;
+            --bg-disabled: #252525;
+            --border-base: #3e3e3e;
+            --border-input: #454545;
+            --border-input-focus: #4cc2ff;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --text-disabled: #555555;
+            --accent-default: #4cc2ff;
+            --accent-hover: #4cc2ff; 
+            --accent-text: #000000;
+            --danger: #ff99a4;
+            --warning-bg: #433519;
+            --warning-text: #fce100;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-stack);
+            background-color: var(--bg-app);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            height: 100vh;
+            overflow: hidden; 
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Header --- */
+        .app-header {
+            height: 50px;
+            padding: 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-base);
+            -webkit-app-region: drag;
+        }
+
+        .app-title {
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .app-title i { color: var(--accent-default); font-size: 18px; }
+
+        .theme-toggle-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: var(--radius-sm);
+            transition: background 0.2s;
+            -webkit-app-region: no-drag;
+        }
+        .theme-toggle-btn:hover { background-color: rgba(128,128,128,0.1); }
+
+        /* --- Layout --- */
+        .app-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border-base);
+            padding: 16px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            overflow-y: auto;
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+
+        /* --- Navigation Items --- */
+        .nav-item {
+            padding: 10px 16px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: 14px;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            position: relative;
+        }
+
+        .nav-item:hover { background-color: rgba(128,128,128,0.05); }
+        .nav-item.active {
+            background-color: rgba(128,128,128,0.08);
+            font-weight: 600;
+        }
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 4px;
+            top: 12px;
+            bottom: 12px;
+            width: 3px;
+            background: var(--accent-default);
+            border-radius: 4px;
+        }
+
+        /* --- Cards & Animation --- */
+        .tab-panel { display: none; animation: fadeUpdate 0.3s cubic-bezier(0.165, 0.84, 0.44, 1); }
+        .tab-panel.active { display: block; }
+
+        @keyframes fadeUpdate { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .fluent-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-base);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-card);
+        }
+
+        .card-header {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-primary);
+        }
+        
+        /* --- Tooltips --- */
+        .help-icon {
+            color: var(--accent-default);
+            font-size: 14px;
+            margin-left: 6px;
+            cursor: help;
+            position: relative;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+        .help-icon:hover { opacity: 1; }
+
+        .help-icon:hover::after {
+            content: attr(data-tip);
+            position: absolute;
+            bottom: 150%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #202020; 
+            color: #ffffff;
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            white-space: pre-wrap;
+            width: max-content;
+            max-width: 280px;
+            z-index: 9999;
+            box-shadow: var(--shadow-flyout);
+            font-weight: normal;
+            line-height: 1.4;
+            pointer-events: none;
+            text-align: left;
+            font-family: 'Segoe UI', sans-serif;
+            border: 1px solid #454545;
+        }
+        
+        /* Tooltip Arrow */
+        .help-icon:hover::before {
+            content: '';
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: #202020;
+            z-index: 9999;
+            pointer-events: none;
+        }
+
+        /* --- Form Elements --- */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px 24px;
+        }
+
+        .input-group { margin-bottom: 16px; }
+        
+        .input-label {
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: var(--text-primary);
+        }
+        
+        .input-hint { font-weight: normal; color: var(--text-secondary); font-size: 12px; margin-left: auto;}
+
+        .fluent-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-input);
+            background: var(--bg-input);
+            color: var(--text-primary);
+            border-radius: var(--radius-md);
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 14px;
+            border-bottom: 2px solid transparent; 
+            transition: all 0.2s;
+        }
+
+        .fluent-input:hover { background: var(--bg-input-hover); border-color: var(--text-secondary); }
+        .fluent-input:focus {
+            outline: none;
+            background: var(--bg-card);
+            border-bottom-color: var(--accent-default);
+        }
+        .fluent-input:disabled {
+            background-color: var(--bg-disabled);
+            color: var(--text-disabled);
+            cursor: not-allowed;
+            border-bottom-color: transparent;
+        }
+
+        .fluent-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23666%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px top 50%;
+            background-size: 10px auto;
+            padding-right: 32px;
+            cursor: pointer;
+        }
+
+        /* --- Fluent Toggle Switch --- */
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid transparent;
+            min-height: 40px;
+        }
+        .toggle-row.disabled { opacity: 0.5; pointer-events: none; }
+        
+        .toggle-label {
+            display: flex;
+            flex-direction: column;
+            font-size: 14px;
+        }
+        .toggle-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+        .chip-warning {
+            background: var(--warning-bg);
+            color: var(--warning-text);
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-left: 6px;
+            font-weight: 600;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 22px;
+            flex-shrink: 0;
+            margin-left: 16px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: transparent;
+            border: 1px solid var(--text-secondary);
+            transition: .3s;
+            border-radius: 22px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: var(--text-secondary);
+            transition: .3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--accent-default);
+            border-color: var(--accent-default);
+        }
+        input:checked + .slider:before {
+            background-color: white;
+            transform: translateX(22px);
+        }
+        input:hover + .slider { border-color: var(--text-primary); }
+        input:checked:hover + .slider { background-color: var(--accent-hover); }
+
+        /* --- Footer --- */
+        .command-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border-base);
+            padding: 16px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 100;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+        }
+
+        .cmd-preview {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            background: var(--bg-app);
+            padding: 12px;
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            border: 1px solid var(--border-input);
+            word-break: break-all;
+            max-height: 80px;
+            overflow-y: auto;
+            user-select: text;
+        }
+
+        .action-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-group { display: flex; gap: 10px; }
+
+        .btn {
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 8px 20px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            border: 1px solid transparent;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary { background-color: var(--accent-default); color: var(--accent-text); }
+        .btn-primary:hover { background-color: var(--accent-hover); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        
+        .btn-secondary { background-color: var(--bg-card); color: var(--text-primary); border-color: var(--border-base); }
+        .btn-secondary:hover { background-color: var(--bg-app); border-color: var(--border-input); }
+        
+        .btn-danger { background-color: transparent; color: var(--danger); }
+        .btn-danger:hover { background-color: rgba(196, 43, 28, 0.05); }
+
+        /* --- Toast Notification --- */
+        .toast {
+            position: fixed;
+            bottom: 110px;
+            right: 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-base);
+            padding: 12px 16px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-flyout);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transform: translateY(20px);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+            z-index: 1000;
+            font-size: 14px;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast i { color: var(--success); font-size: 16px; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .app-container { flex-direction: column; overflow-y: auto; }
+            .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border-base); flex-direction: row; overflow-x: auto; white-space: nowrap; padding: 10px; }
+            .content-area { padding-bottom: 150px; }
+            .nav-item { display: inline-flex; width: auto; padding: 6px 12px; }
+            .command-bar { padding: 12px; }
+            .action-row { flex-direction: column; gap: 10px; align-items: stretch; }
+            .btn { justify-content: center; }
+        }
+    </style>
+</head>
+<body data-theme="light">
+
+    <header class="app-header">
+        <div class="app-title">
+            <i class="fa-solid fa-cloud-arrow-down"></i>
+            WgetGUI Ultimate
+        </div>
+        <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Dark Mode">
+            <i class="fa-solid fa-moon"></i>
+        </button>
+    </header>
+
+    <div class="app-container">
+        <nav class="sidebar">
+            <button class="nav-item active" onclick="switchTab('tab-general')">
+                <i class="fa-regular fa-paper-plane"></i> General
+            </button>
+            <button class="nav-item" onclick="switchTab('tab-recursive')">
+                <i class="fa-solid fa-sitemap"></i> Recursive
+            </button>
+            <button class="nav-item" onclick="switchTab('tab-network')">
+                <i class="fa-solid fa-wifi"></i> Network & Auth
+            </button>
+             <button class="nav-item" onclick="switchTab('tab-advanced')">
+                <i class="fa-solid fa-sliders"></i> Advanced
+            </button>
+            <button class="nav-item" onclick="switchTab('tab-logging')">
+                <i class="fa-solid fa-terminal"></i> Output
+            </button>
+            <button class="nav-item" onclick="switchTab('tab-queue')">
+                <i class="fa-solid fa-list-check"></i> Queue 
+                <span id="queueBadge" style="margin-left:auto; background:var(--accent-default); color:white; padding:1px 8px; border-radius:12px; font-size:11px; display:none;">0</span>
+            </button>
+        </nav>
+
+        <main class="content-area">
+
+            <div id="presets-container" class="fluent-card" style="padding: 16px 20px; display: flex; align-items: center; gap: 20px; border-left: 4px solid var(--accent-default);">
+                <div style="flex:1;">
+                    <div style="font-weight:600; font-size:14px;">Quick Presets</div>
+                    <div style="font-size:12px; color:var(--text-secondary);">Apply common Wget configurations.</div>
+                </div>
+                <select id="presetSelect" class="fluent-input fluent-select" onchange="applyPreset()" style="width: 250px;">
+                    <option value="custom">Custom Configuration</option>
+                    <option value="simple">Simple Resume Download</option>
+                    <option value="mirror">Mirror Website (Offline Copy)</option>
+                    <option value="spider">Spider (Check Broken Links)</option>
+                    <option value="bulk">Bulk Download (Input File)</option>
+                </select>
+            </div>
+
+            <div id="tab-general" class="tab-panel active">
+                <div class="fluent-card">
+                    <div class="card-header"><i class="fa-solid fa-link"></i> Target</div>
+                    <div class="input-group">
+                        <label class="input-label">
+                            Target URL
+                            <i class="fa-regular fa-circle-question help-icon" data-tip="The URL to download. Can be a single file or a website root."></i>
+                        </label>
+                        <input type="text" id="url" class="fluent-input" placeholder="https://example.com/file.zip">
+                    </div>
+                     <div class="input-group">
+                        <label class="input-label">
+                            Input File (-i)
+                            <i class="fa-regular fa-circle-question help-icon" data-tip="Read URLs from a local or external file."></i>
+                        </label>
+                        <input type="text" id="input_file" class="fluent-input" placeholder="urls.txt">
+                    </div>
+                </div>
+
+                <div class="fluent-card">
+                    <div class="card-header"><i class="fa-regular fa-floppy-disk"></i> Output Control</div>
+                    <div class="input-group">
+                        <label class="input-label">
+                            Save As (-O)
+                            <i class="fa-regular fa-circle-question help-icon" data-tip="Concatenate documents to a file. CAUTION: Usually overwrites."></i>
+                        </label>
+                        <input type="text" id="output_doc" class="fluent-input" placeholder="filename.zip">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">
+                            Directory Prefix (-P)
+                            <i class="fa-regular fa-circle-question help-icon" data-tip="Save all files to this directory."></i>
+                        </label>
+                        <input type="text" id="prefix" class="fluent-input" placeholder="C:\Downloads\">
+                    </div>
+                    <div class="form-grid">
+                        <div class="toggle-row">
+                            <div class="toggle-label">Continue (-c)<span class="toggle-desc">Resume getting a partially-downloaded file.</span></div>
+                            <label class="switch"><input type="checkbox" id="continue" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="toggle-row">
+                            <div class="toggle-label">No Clobber (-nc)<span class="toggle-desc">Skip downloads that would overwrite existing files.</span></div>
+                            <label class="switch"><input type="checkbox" id="no_clobber"><span class="slider"></span></label>
+                        </div>
+                         <div class="toggle-row">
+                            <div class="toggle-label">Timestamping (-N)<span class="toggle-desc">Don't re-retrieve files unless newer than local.</span></div>
+                            <label class="switch"><input type="checkbox" id="timestamping"><span class="slider"></span></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-recursive" class="tab-panel">
+                <div class="fluent-card">
+                    <div class="card-header"><i class="fa-solid fa-sitemap"></i> Recursion & Mirroring</div>
+                    
+                    <div class="toggle-row" style="margin-bottom: 15px;">
+                        <div class="toggle-label">
+                            Mirror Mode (-m)
+                            <span class="toggle-desc">Shortcut for -N -r -l inf --no-remove-listing. <span class="chip-warning">Best for backup</span></span>
+                        </div>
+                        <label class="switch"><input type="checkbox" id="mirror" onchange="handleMirror()"><span class="slider"></span></label>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="toggle-row">
+                            <div class="toggle-label">Recursive (-r)<span class="toggle-desc">Specify recursive download.</span></div>
+                            <label class="switch"><input type="checkbox" id="recursive"><span class="slider"></span></label>
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">
+                                Recursion Level (-l)
+                                <i class="fa-regular fa-circle-question help-icon" data-tip="Maximum recursion depth (inf or 0 for infinite)."></i>
+                            </label>
+                            <input type="text" id="level" class="fluent-input" placeholder="5">
+                        </div>
+                    </div>
+
+                    <div class="form-grid" style="margin-top:10px;">
+                        <div class="toggle-row">
+                            <div class="toggle-label">No Parent (-np)<span class="toggle-desc">Don't ascend to the parent directory.</span></div>
+                            <label class="switch"><input type="checkbox" id="no_parent"><span class="slider"></span></label>
+                        </div>
+                        <div class="toggle-row">
+                            <div class="toggle-label">Convert Links (-k)<span class="toggle-desc">Make links in downloaded HTML point to local files.</span></div>
+                            <label class="switch"><input type="checkbox" id="convert_links"><span class="slider"></span></label>
+                        </div>
+                        <div class="toggle-row">
+                            <div class="toggle-label">Page Requisites (-p)<span class="toggle-desc">Get all images/css/js needed to display HTML page.</span></div>
+                            <label class="switch"><input type="checkbox" id="page_requisites"><span class="slider"></span></label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="fluent-card">
+                    <div class="card-header"><i class="fa-solid fa-filter"></i> Filters</div>
+                    <div class="input-group">
+                        <label class="input-label">Accept List (-A)<span class="input-hint">comma-separated</span></label>
+                        <input type="text" id="accept" class="fluent-input" placeholder="jpg,png,gif">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Reject List (-R)<span class="input-hint">comma-separated</span></label>
+                        <input type="text" id="reject" class="fluent-input" placeholder="index.html,robots.txt">
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-network" class="tab-panel">
+                <div class="fluent-card">
+                    <div class="card-header"><i class="fa-solid fa-user-shield"></i> Authentication</div>
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label class="input-label">Username (--user)</label>
+                            <input type="text" id="user" class="fluent-input">
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">Password (--password)</label>
+                            <input type="password" id="password" class="fluent-input">
+                        </div>
+                    </div>
+                    <div class="toggle-row">
+                        <div class="toggle-label">Ask Password (--ask-password)<span class="toggle-desc">Prompt for password instead of storing it.</span></div>
+                        <label class="switch"><input type="checkbox" id="ask_password"><span class="slider"></span></label>
+                    </div>
+                </div>
+
+                <div class="fluent-card">
+                    <div class="card-header"><i class="fa-solid fa-wifi"></i> Connection</div>
+                    <div class="input-group">
+                        <label class="input-label">
+                            User Agent (-U)
+                            <i class="fa-regular fa-circle-question help-icon" data-tip="Identify as a different browser/agent to the server."></i>
+                        </label>
+                        <input type="text" id="user_agent" class="fluent-input" placeholder="Mozilla/5.0...">
+                    </div>
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label class="input-label">Timeout (-T)<span class="input-hint">Seconds</span></label>
+                            <input type="number" id="timeout" class="fluent-input" placeholder="60">
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">Retries (-t)<span class="input-hint">0=inf</span></label>
+                            <input type="number" id="tries" class="fluent-input" placeholder="20">
+                        </div>
+                    </div>
+                    <div class="toggle-row">
+                        <div class="toggle-label">No Check Cert (--no-check-certificate)<span class="toggle-desc">Don't validate SSL server certificate.</span></div>
+                        <label class="switch"><input type="checkbox" id="no_check_cert"><span class="slider"></span></label>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-advanced" class="tab-panel">
+                 <div class="fluent-card">
+                    <div class="card-header"><i class="fa-solid fa-gauge-high"></i> Throttling & Delays</div>
+                    <div class="input-group">
+                        <label class="input-label">
+                            Limit Rate (--limit-rate)
+                            <i class="fa-regular fa-circle-question help-icon" data-tip="Limit download speed (e.g. 200k, 1m)."></i>
+                        </label>
+                        <input type="text" id="limit_rate" class="fluent-input" placeholder="2m">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">
+                            Wait (-w)
+                            <i class="fa-regular fa-circle-question help-icon" data-tip="Wait seconds between retrievals."></i>
+                        </label>
+                        <input type="number" id="wait" class="fluent-input" placeholder="0">
+                    </div>
+                    <div class="toggle-row">
+                        <div class="toggle-label">Random Wait (--random-wait)<span class="toggle-desc">Wait from 0.5 to 1.5 * wait interval.</span></div>
+                        <label class="switch"><input type="checkbox" id="random_wait"><span class="slider"></span></label>
+                    </div>
+                </div>
+
+                <div class="fluent-card">
+                    <div class="card-header"><i class="fa-solid fa-bug"></i> Debug & Misc</div>
+                    <div class="toggle-row">
+                        <div class="toggle-label">Spider (--spider)<span class="toggle-desc">Don't download, just check if pages exist.</span></div>
+                        <label class="switch"><input type="checkbox" id="spider"><span class="slider"></span></label>
+                    </div>
+                    <div class="toggle-row">
+                        <div class="toggle-label">Restrict Filenames<span class="toggle-desc">--restrict-file-names=windows</span></div>
+                        <label class="switch"><input type="checkbox" id="restrict_names"><span class="slider"></span></label>
+                    </div>
+                    <div class="toggle-row">
+                        <div class="toggle-label">Ignore Length (--ignore-length)<span class="toggle-desc">Ignore Content-Length header.</span></div>
+                        <label class="switch"><input type="checkbox" id="ignore_length"><span class="slider"></span></label>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-logging" class="tab-panel">
+                <div class="fluent-card">
+                    <div class="card-header"><i class="fa-solid fa-file-lines"></i> Logs</div>
+                    <div class="input-group">
+                        <label class="input-label">Log File (-o)</label>
+                        <div style="display:flex; gap:12px;">
+                            <input type="text" id="log_file" class="fluent-input" placeholder="wget.log">
+                            <div class="toggle-row" style="padding:0; min-height:0; border:none;">
+                                <label class="switch" title="Append (-a)"><input type="checkbox" id="log_append"><span class="slider"></span></label>
+                                <span style="font-size:12px; margin-left:8px;">Append</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="toggle-row">
+                            <div class="toggle-label">Quiet (-q)<span class="toggle-desc">Turn off output.</span></div>
+                            <label class="switch"><input type="checkbox" id="quiet"><span class="slider"></span></label>
+                        </div>
+                         <div class="toggle-row">
+                            <div class="toggle-label">Verbose (-v)<span class="toggle-desc">Detailed output (Default).</span></div>
+                            <label class="switch"><input type="checkbox" id="verbose" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="toggle-row">
+                            <div class="toggle-label">No Verbose (-nv)<span class="toggle-desc">Turn off verbosity, but keep errors.</span></div>
+                            <label class="switch"><input type="checkbox" id="no_verbose"><span class="slider"></span></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-queue" class="tab-panel">
+                <div class="fluent-card">
+                    <div class="card-header">
+                        <span><i class="fa-solid fa-layer-group"></i> Batch Queue</span>
+                        <div class="btn-group" style="margin-left:auto;">
+                            <button class="btn btn-secondary" onclick="clearQueue()">Clear</button>
+                            <button class="btn btn-primary" onclick="downloadBatch()">Download .BAT</button>
+                        </div>
+                    </div>
+                    <div id="queueList" style="min-height: 200px; background: var(--bg-app); border: 1px solid var(--border-input); border-radius: var(--radius-md); padding: 16px;">
+                        <p style="text-align:center; color:var(--text-secondary); margin-top: 80px;">Queue is empty</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="height: 120px;"></div>
+        </main>
+    </div>
+
+    <footer class="command-bar">
+        <div class="cmd-preview" id="commandOutput">wget "https://example.com/file.zip"</div>
+        <div class="action-row">
+            <span style="font-size: 12px; color: var(--text-secondary);">
+                <i class="fa-brands fa-windows"></i> Ensure standard GNU wget.exe is installed/in path.
+            </span>
+            <div class="btn-group">
+                <button class="btn btn-danger" onclick="resetForm()">
+                    <i class="fa-solid fa-trash"></i> Reset
+                </button>
+                <button class="btn btn-secondary" onclick="addToQueue()">
+                    <i class="fa-solid fa-plus"></i> Add Queue
+                </button>
+                <button class="btn btn-primary" onclick="copyToClipboard()">
+                    <i class="fa-regular fa-clipboard"></i> Copy
+                </button>
+            </div>
+        </div>
+    </footer>
+
+    <div id="toast" class="toast">
+        <i class="fa-solid fa-check-circle"></i>
+        <span id="toastMsg">Action Successful</span>
+    </div>
+
+    <script>
+        let commandQueue = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('input, select').forEach(input => {
+                input.addEventListener('input', updateCommand);
+                input.addEventListener('change', updateCommand);
+            });
+            
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.body.setAttribute('data-theme', 'dark');
+            }
+            updateCommand();
+        });
+
+        function toggleTheme() {
+            const current = document.body.getAttribute('data-theme');
+            document.body.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+            
+            const presets = document.getElementById('presets-container');
+            presets.style.display = tabId === 'tab-queue' ? 'none' : 'flex';
+        }
+
+        // Logic: Mirror Implies Recursive
+        function handleMirror() {
+            const isMirror = document.getElementById('mirror').checked;
+            if (isMirror) {
+                document.getElementById('recursive').checked = true;
+                document.getElementById('level').value = 'inf';
+                document.getElementById('timestamping').checked = true;
+                document.getElementById('no_parent').checked = true;
+            }
+            updateCommand();
+        }
+
+        // Logic: Presets
+        function applyPreset() {
+            const preset = document.getElementById('presetSelect').value;
+            if(preset === 'custom') return;
+
+            resetForm(false); // don't show toast inside
+
+            const check = (id, val) => document.getElementById(id).checked = val;
+            const setVal = (id, val) => document.getElementById(id).value = val;
+
+            if (preset === 'simple') {
+                check('continue', true);
+            } else if (preset === 'mirror') {
+                check('mirror', true);
+                handleMirror();
+                check('convert_links', true);
+                check('page_requisites', true);
+                check('restrict_names', true);
+            } else if (preset === 'spider') {
+                check('spider', true);
+                check('recursive', true);
+                check('no_verbose', true);
+            } else if (preset === 'bulk') {
+                setVal('input_file', 'downloads.txt');
+                setVal('url', '');
+                check('continue', true);
+            }
+
+            updateCommand();
+            showToast(`Applied preset: ${preset}`);
+        }
+
+        // Logic: Command Generation
+        function updateCommand() {
+            const url = document.getElementById('url').value.trim();
+            const inputFile = document.getElementById('input_file').value.trim();
+
+            let cmd = 'wget';
+
+            // Helpers
+            const isC = (id) => document.getElementById(id).checked;
+            const val = (id) => document.getElementById(id).value.trim();
+
+            // General
+            if(val('output_doc')) cmd += ` -O "${val('output_doc')}"`;
+            if(val('prefix')) cmd += ` -P "${val('prefix')}"`;
+            if(isC('continue')) cmd += ' -c';
+            if(isC('no_clobber')) cmd += ' -nc';
+            if(isC('timestamping')) cmd += ' -N';
+
+            // Inputs (URL vs File)
+            if(inputFile) cmd += ` -i "${inputFile}"`;
+
+            // Recursive
+            if(isC('mirror')) cmd += ' -m';
+            else if(isC('recursive')) cmd += ' -r';
+
+            const lvl = val('level');
+            if(lvl && (isC('recursive') || isC('mirror'))) cmd += ` -l ${lvl}`;
+            
+            if(isC('no_parent')) cmd += ' -np';
+            if(isC('convert_links')) cmd += ' -k';
+            if(isC('page_requisites')) cmd += ' -p';
+
+            const acc = val('accept'); if(acc) cmd += ` -A "${acc}"`;
+            const rej = val('reject'); if(rej) cmd += ` -R "${rej}"`;
+
+            // Network
+            const u = val('user'); if(u) cmd += ` --user="${u}"`;
+            const p = val('password'); if(p) cmd += ` --password="${p}"`;
+            if(isC('ask_password')) cmd += ' --ask-password';
+            
+            const ua = val('user_agent'); if(ua) cmd += ` -U "${ua}"`;
+            const to = val('timeout'); if(to) cmd += ` -T ${to}`;
+            const tr = val('tries'); if(tr) cmd += ` -t ${tr}`;
+            if(isC('no_check_cert')) cmd += ' --no-check-certificate';
+
+            // Advanced
+            const lr = val('limit_rate'); if(lr) cmd += ` --limit-rate=${lr}`;
+            const w = val('wait'); if(w) cmd += ` -w ${w}`;
+            if(isC('random_wait')) cmd += ' --random-wait';
+            if(isC('spider')) cmd += ' --spider';
+            if(isC('restrict_names')) cmd += ' --restrict-file-names=windows';
+            if(isC('ignore_length')) cmd += ' --ignore-length';
+
+            // Logs
+            const log = val('log_file');
+            if(log) {
+                if(isC('log_append')) cmd += ` -a "${log}"`;
+                else cmd += ` -o "${log}"`;
+            }
+
+            if(isC('quiet')) cmd += ' -q';
+            else if(isC('no_verbose')) cmd += ' -nv';
+            else if(!isC('verbose')) cmd += ' -nv'; // if verbose unchecked (default checked)
+
+            // Final URL (if not input file)
+            if(url) cmd += ` "${url}"`;
+
+            document.getElementById('commandOutput').textContent = cmd;
+        }
+
+        // Utils
+        function copyToClipboard() {
+            const text = document.getElementById('commandOutput').textContent;
+            navigator.clipboard.writeText(text).then(() => showToast("Command copied!"));
+        }
+
+        function resetForm(toast = true) {
+            document.querySelectorAll('input').forEach(i => {
+                if(i.type === 'checkbox') i.checked = false;
+                else i.value = '';
+            });
+            document.getElementById('continue').checked = true; // Default for wget usually
+            document.getElementById('verbose').checked = true;
+            document.getElementById('presetSelect').value = 'custom';
+            updateCommand();
+            if(toast) showToast("Form reset");
+        }
+
+        function addToQueue() {
+            const cmd = document.getElementById('commandOutput').textContent;
+            if(!cmd.includes('http') && !cmd.includes(' -i ')) return showToast("URL or Input File required");
+            commandQueue.push(cmd);
+            updateQueueUI();
+            showToast("Added to Queue");
+        }
+
+        function clearQueue() {
+            commandQueue = [];
+            updateQueueUI();
+            showToast("Queue cleared");
+        }
+
+        function updateQueueUI() {
+            const list = document.getElementById('queueList');
+            const badge = document.getElementById('queueBadge');
+            if (commandQueue.length === 0) {
+                list.innerHTML = '<p style="text-align:center; color:var(--text-secondary); margin-top: 80px;">Queue is empty</p>';
+                badge.style.display = 'none';
+            } else {
+                badge.innerText = commandQueue.length;
+                badge.style.display = 'inline-block';
+                list.innerHTML = commandQueue.map((cmd, i) => `
+                    <div style="background:var(--bg-card); border-bottom:1px solid var(--border-base); padding:10px; font-family:'Consolas', monospace; font-size:12px; margin-bottom: 8px;">
+                        <div style="color:var(--accent-default); font-weight:bold; margin-bottom:4px;">Job ${i+1}</div>
+                        <div style="word-break:break-all;">${cmd}</div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function downloadBatch() {
+            if (commandQueue.length === 0) return showToast("Queue is empty!");
+            let content = "@echo off\r\nREM Generated by WgetGUI\r\n\r\n";
+            commandQueue.forEach(cmd => content += `${cmd}\r\nif %errorlevel% neq 0 echo Error in job\r\n\r\n`);
+            content += "pause";
+            const blob = new Blob([content], {type: "text/plain"});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = "wget_batch.bat";
+            a.click();
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>
